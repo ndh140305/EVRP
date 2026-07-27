@@ -22,6 +22,9 @@ def build_cau_giay_graph():
         G.nodes[nearest_node]['is_charging_station'] = True
         G.nodes[nearest_node]['station_name'] = name
 
+        largest_scc = max(nx.strongly_connected_components(G), key=len)
+        G = G.subgraph(largest_scc).copy()
+    
     return G, station_nodes
 
 if __name__ == "__main__":

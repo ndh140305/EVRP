@@ -1,8 +1,9 @@
 import osmnx as ox
 import networkx as nx
 import matplotlib.pyplot as plt
-import os
+import matplotlib.lines as mlines
 import pickle
+import os
 
 def load_and_visualize():
     graph_path = os.path.join("data", "processed", "cau_giay_graph.pkl")
@@ -17,22 +18,28 @@ def load_and_visualize():
     
     for node, data in G.nodes(data=True):
         if data.get('is_charging_station', False):
-            node_colors.append('#FF0000')
-            node_sizes.append(80)
+            node_colors.append('#E63946')  
+            node_sizes.append(60)
         else:
-            node_colors.append('#999999')
-            node_sizes.append(15)
-            
+            node_colors.append('#ADB5BD')  
+            node_sizes.append(5)          
+
     fig, ax = ox.plot_graph(
         G, 
         node_color=node_colors, 
         node_size=node_sizes,
-        edge_color='#CCCCCC', 
-        edge_linewidth=0.8,
+        edge_color='#6C757D',         
+        edge_linewidth=0.6,             
+        bgcolor='#FFFFFF',          
         show=False, 
-        close=False
+        close=False,
+        filepath="data/processed/map_preview.png",
+        save=True                       
     )
-    ax.set_title("Bản đồ Cầu Giấy)", fontsize=14)
+    
+    ax.set_title("Bản đồ Cầu Giấy", fontsize=13, fontweight='bold', pad=15)
+
+    plt.tight_layout()
     plt.show()
 
 if __name__ == "__main__":
