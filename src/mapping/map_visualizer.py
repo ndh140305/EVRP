@@ -5,12 +5,13 @@ import matplotlib.lines as mlines
 import pickle
 import os
 
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+GRAPH_PATH = os.path.join(ROOT_DIR, "data", "processed", "cau_giay_graph.pkl")
+OUTPUT_PATH = os.path.join(ROOT_DIR, "data", "processed", "map_preview.png")
+
+
 def load_and_visualize():
-    graph_path = os.path.join("data", "processed", "cau_giay_graph.pkl")
-    if not os.path.exists(graph_path):
-        graph_path = os.path.join("..", "..", "data", "processed", "cau_giay_graph.pkl")
-        
-    with open(graph_path, "rb") as f:
+    with open(GRAPH_PATH, "rb") as f:
         G = pickle.load(f)
 
     node_colors = []
@@ -33,7 +34,7 @@ def load_and_visualize():
         bgcolor='#FFFFFF',          
         show=False, 
         close=False,
-        filepath="data/processed/map_preview.png",
+        filepath=OUTPUT_PATH,
         save=True                       
     )
     
