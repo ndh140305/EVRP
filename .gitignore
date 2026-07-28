@@ -20,6 +20,7 @@ ENV/
 # Data and generated artifacts
 data/
 src/mapping/cache/
+src/routing/cache/
 *.log
 
 # OS files
