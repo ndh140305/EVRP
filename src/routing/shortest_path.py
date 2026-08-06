@@ -139,10 +139,10 @@ if __name__ == "__main__":
 
     all_points: dict[str, tuple[float, float]] = {}
 
-    all_points["Depot"] = (21.0365, 105.7832)
+    all_points[config.DEPOT["id"]] = (config.DEPOT["lat"], config.DEPOT["lon"])
 
-    for name, (lat, lon) in config.VINFAST_STATIONS.items():
-        all_points[name] = (lat, lon)
+    for name, info in config.VINFAST_STATIONS.items():
+        all_points[name] = (info["lat"], info["lon"])
 
     matrix = compute_and_save(
         named_coords=all_points,
