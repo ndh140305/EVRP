@@ -4,11 +4,8 @@ import sys
 import os
 import pickle
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(ROOT_DIR)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import config
-
-GRAPH_PATH = os.path.join(ROOT_DIR, "data", "processed", "cau_giay_graph.pkl")
 
 def build_cau_giay_graph():
     G = ox.graph_from_place(config.PLACE_NAME, network_type=config.NETWORK_TYPE)
@@ -33,10 +30,10 @@ def build_cau_giay_graph():
 
 if __name__ == "__main__":
     graph, stations = build_cau_giay_graph()
-
-    os.makedirs(os.path.dirname(GRAPH_PATH), exist_ok=True)
-
-    with open(GRAPH_PATH, "wb") as f:
+    
+    os.makedirs("data/processed", exist_ok=True)
+    
+    with open("data/processed/cau_giay_graph.pkl", "wb") as f:
         pickle.dump((graph, stations), f)
-
-    print(f"Graph saved to {GRAPH_PATH}")
+        
+    print(f"Graph saved to data/processed/cau_giay_graph.pkl")

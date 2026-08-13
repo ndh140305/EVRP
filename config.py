@@ -5,7 +5,9 @@ VEHICLE_SPEC = {
     "battery_kwh": 5.0,
     "consumption_kwh_per_km": 0.18,
     "max_load_kg": 500,
-    "min_battery_safety_percent": 0.10
+    "min_battery_safety_percent": 0.10,
+    "depot_charging_rate_kw": 22.0,
+    "station_charging_rate_kw": 22.0
 }
 
 DEPOT = {
@@ -34,13 +36,13 @@ VINFAST_STATIONS = {
         "name": "Tram sac VinFast - Cau Giay",
         "lat": 21.0402,
         "lon": 105.7958,
-        "charging_rate_kw": 11.0
+        "charging_rate_kw": 22.0  
     },
     "S4": {
         "name": "Tram sac VinFast - Duong Dinh Nghe",
         "lat": 21.0225,
         "lon": 105.7865,
-        "charging_rate_kw": 50.0
+        "charging_rate_kw": 22.0  
     },
     "S5": {
         "name": "Tram sac VinFast - Cong vien Cau Giay",
@@ -52,5 +54,6 @@ VINFAST_STATIONS = {
 
 SYSTEM_PARAMS = {
     "speed_kmh": 40.0,
-    "charging_policy": "full_charge"
+    "charging_policy": "full_charge",
+    "estimated_charge_sec": 900  
 }
