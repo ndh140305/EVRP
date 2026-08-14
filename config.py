@@ -57,3 +57,5 @@ SYSTEM_PARAMS = {
     "charging_policy": "full_charge",
     "estimated_charge_sec": 900  
 }
+
+DEFAULT_SPEED_KMH = SYSTEM_PARAMS["speed_kmh"]

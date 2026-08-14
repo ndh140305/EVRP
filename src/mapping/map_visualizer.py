@@ -12,7 +12,8 @@ OUTPUT_PATH = os.path.join(ROOT_DIR, "data", "processed", "map_preview.png")
 
 def load_and_visualize():
     with open(GRAPH_PATH, "rb") as f:
-        G = pickle.load(f)
+        data = pickle.load(f)
+    G = data[0] if isinstance(data, tuple) else data
 
     node_colors = []
     node_sizes = []

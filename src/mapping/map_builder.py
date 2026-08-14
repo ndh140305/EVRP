@@ -31,9 +31,11 @@ def build_cau_giay_graph():
 if __name__ == "__main__":
     graph, stations = build_cau_giay_graph()
     
-    os.makedirs("data/processed", exist_ok=True)
+    _root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    _out_path = os.path.join(_root, "data", "processed", "cau_giay_graph.pkl")
+    os.makedirs(os.path.dirname(_out_path), exist_ok=True)
     
-    with open("data/processed/cau_giay_graph.pkl", "wb") as f:
+    with open(_out_path, "wb") as f:
         pickle.dump((graph, stations), f)
         
-    print(f"Graph saved to data/processed/cau_giay_graph.pkl")
+    print(f"Graph saved to {_out_path}")
