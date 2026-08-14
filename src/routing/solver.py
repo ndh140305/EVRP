@@ -211,6 +211,18 @@ class ORToolsEVRPTWSolver:
                     soc_dimension.CumulVar(index) + soc_dimension.SlackVar(index)
                     <= battery_units
                 )
+                
+                rate_kw = node["charging_rate_kw"]
+
+                if rate_kw <= 0:
+                    raise ValueError(
+                        f"Invalid charging rate at station {node['id']}: {rate_kw}"
+                    )
+
+                solver.Add(
+                    time_dimension.SlackVar(index) * int(rate_kw * 1000)
+                    >= soc_dimension.SlackVar(index) * 3600
+                )
                 routing.AddDisjunction([index], 0)
 
         fixed_cost = 1_000_000
