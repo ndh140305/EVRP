@@ -276,7 +276,6 @@ class ORToolsEVRPTWSolver:
                 node_data = self.nodes[node_idx]
 
                 time_val = solution.Min(time_dimension.CumulVar(index))
-
                 soc_arrival_kwh = solution.Min(soc_dimension.CumulVar(index)) / 1000.0
 
                 original_id = node_data.get("original_id", node_data["id"])
@@ -286,9 +285,17 @@ class ORToolsEVRPTWSolver:
                 recharged_kwh = 0.0
                 charge_sec = 0.0
 
+                
+                next_index = solution.Value(routing.NextVar(index))
+                next_node_idx = manager.IndexToNode(next_index)
+                dist_km = self.distance_matrix[node_idx, next_node_idx]
+                
                 if node_data["type"] == "CHARGING_STATION":
-                    soc_slack_units = solution.Min(soc_dimension.SlackVar(index))
-                    recharged_kwh = soc_slack_units / 1000.0
+                    consumed_to_next_kwh = dist_km * self.spec["consumption_kwh_per_km"]
+                    soc_next_kwh = solution.Min(soc_dimension.CumulVar(next_index)) / 1000.0
+                    
+                    recharged_kwh = max(0.0, soc_next_kwh + consumed_to_next_kwh - soc_arrival_kwh)
+                    
                     rate_kw = node_data["charging_rate_kw"]
                     charge_sec = (recharged_kwh / rate_kw) * 3600 if recharged_kwh > 0 else 0.0
                     total_charge_time_sec += charge_sec
@@ -317,9 +324,6 @@ class ORToolsEVRPTWSolver:
                 }
                 route_stops.append(stop_info)
 
-                next_index = solution.Value(routing.NextVar(index))
-                next_node_idx = manager.IndexToNode(next_index)
-                dist_km = self.distance_matrix[node_idx, next_node_idx]
                 total_dist_km += dist_km
                 route_dist_km += dist_km
                 leg_energy = dist_km * self.spec["consumption_kwh_per_km"]
