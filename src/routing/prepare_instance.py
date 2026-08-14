@@ -69,7 +69,12 @@ def print_summary(instance: dict, matrix: dict):
 
 
 if __name__ == "__main__":
-    instance_file = os.path.join(ROOT_DIR, "data", "instances", "sample_01.json")
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--instance", default="sample_01", help="Instance name")
+    args = parser.parse_args()
+    
+    instance_file = os.path.join(ROOT_DIR, "data", "instances", f"{args.instance}.json")
     instance = load_instance(instance_file)
 
     print(f"Instance : {instance['instance_name']}")

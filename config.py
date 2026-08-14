@@ -2,7 +2,7 @@ PLACE_NAME = "Cau Giay District, Hanoi, Vietnam"
 NETWORK_TYPE = "drive"
 
 VEHICLE_SPEC = {
-    "battery_kwh": 5.0,
+    "battery_kwh": 1.0,
     "consumption_kwh_per_km": 0.18,
     "max_load_kg": 500,
     "min_battery_safety_percent": 0.10,
@@ -53,7 +53,7 @@ VINFAST_STATIONS = {
 }
 
 SYSTEM_PARAMS = {
-    "speed_kmh": 40.0,
+    "speed_kmh": 20.0,
     "charging_policy": "full_charge",
     "estimated_charge_sec": 900  
 }

@@ -44,4 +44,5 @@ def run_pipeline(instance_name: str):
         print("Error: Solver could not find any feasible solution!")
 
 if __name__ == "__main__":
-    run_pipeline("sample_01")
+    instance_name = sys.argv[1] if len(sys.argv) > 1 else "sample_01"
+    run_pipeline(instance_name)
