@@ -71,9 +71,6 @@ class ORToolsEVRPTWSolver:
         )
 
         for sid, info in self.stations.items():
-            charge_time_sec = int(
-                (battery_usable_kwh / info["charging_rate_kw"]) * 3600
-            )
             for m in range(self.num_dummies_per_station):
                 dummy_id = f"{sid}_d{m}"
                 self.nodes.append({
@@ -83,7 +80,8 @@ class ORToolsEVRPTWSolver:
                     "demand": 0,
                     "tw_open": 0,
                     "tw_close": depot_duration_sec,
-                    "service_time": charge_time_sec,
+                    "service_time": 0,
+                    "charging_rate_kw": info["charging_rate_kw"],
                 })
                 idx = len(self.nodes) - 1
                 self.node_id_to_index[dummy_id] = idx
@@ -103,8 +101,8 @@ class ORToolsEVRPTWSolver:
         for i in range(self.num_nodes):
             for j in range(self.num_nodes):
                 key = (physical_ids[i], physical_ids[j])
-                self.distance_matrix[i, j] = dist_dict.get(key, 0.0)
-                self.travel_time_matrix[i, j] = time_dict.get(key, 0.0)
+                self.distance_matrix[i, j] = dist_dict.get(key, float("inf"))
+                self.travel_time_matrix[i, j] = time_dict.get(key, float("inf"))
 
     def solve(self, time_limit_sec: int = 30, enable_log: bool = False):
         manager = pywrapcp.RoutingIndexManager(self.num_nodes, self.num_vehicles, 0)
@@ -112,10 +110,15 @@ class ORToolsEVRPTWSolver:
 
         solver = routing.solver()
 
+        _LARGE_INT = 10 ** 8
+
         def distance_callback(from_index, to_index):
             from_node = manager.IndexToNode(from_index)
             to_node = manager.IndexToNode(to_index)
-            return int(self.distance_matrix[from_node, to_node] * 1000)
+            val = self.distance_matrix[from_node, to_node]
+            if val == float("inf"):
+                return _LARGE_INT
+            return int(val * 1000)
 
         transit_distance_index = routing.RegisterTransitCallback(distance_callback)
         routing.SetArcCostEvaluatorOfAllVehicles(transit_distance_index)
@@ -137,6 +140,8 @@ class ORToolsEVRPTWSolver:
             from_node = manager.IndexToNode(from_index)
             to_node = manager.IndexToNode(to_index)
             travel_sec = self.travel_time_matrix[from_node, to_node]
+            if travel_sec == float("inf"):
+                return _LARGE_INT
             service_sec = self.nodes[from_node]["service_time"]
             return int(travel_sec + service_sec)
 
@@ -171,6 +176,8 @@ class ORToolsEVRPTWSolver:
             from_node = manager.IndexToNode(from_index)
             to_node = manager.IndexToNode(to_index)
             dist_km = self.distance_matrix[from_node, to_node]
+            if dist_km == float("inf"):
+                return -_LARGE_INT
             consumed = dist_km * self.spec["consumption_kwh_per_km"]
             return -int(consumed * 1000)
 
@@ -201,9 +208,9 @@ class ORToolsEVRPTWSolver:
                 soc_dimension.CumulVar(index).SetMin(min_battery_units)
 
                 solver.Add(
-                soc_dimension.CumulVar(index) + soc_dimension.SlackVar(index)
-                <= battery_units
-            )
+                    soc_dimension.CumulVar(index) + soc_dimension.SlackVar(index)
+                    <= battery_units
+                )
                 routing.AddDisjunction([index], 0)
 
         fixed_cost = 1_000_000
@@ -282,12 +289,13 @@ class ORToolsEVRPTWSolver:
                 if node_data["type"] == "CHARGING_STATION":
                     soc_slack_units = solution.Min(soc_dimension.SlackVar(index))
                     recharged_kwh = soc_slack_units / 1000.0
-                    rate_kw = self.stations[original_id]["charging_rate_kw"]
-                    charge_sec = (recharged_kwh / rate_kw) * 3600
+                    rate_kw = node_data["charging_rate_kw"]
+                    charge_sec = (recharged_kwh / rate_kw) * 3600 if recharged_kwh > 0 else 0.0
                     total_charge_time_sec += charge_sec
                     route_charge_time_sec += charge_sec
 
-                departure_sec = time_val + node_data["service_time"]
+                actual_service_sec = node_data["service_time"] + charge_sec
+                departure_sec = time_val + actual_service_sec
                 soc_departure_kwh = min(
                     soc_arrival_kwh + recharged_kwh, self.spec["battery_kwh"]
                 )
