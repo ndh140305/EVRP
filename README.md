@@ -2,7 +2,11 @@
 
 Hệ thống tối ưu lộ trình xe tải điện giao hàng trên tại khu vực Cầu Giấy, Hà Nội. Solver dùng Google OR-Tools, có ràng buộc tải trọng, khung giờ giao nhận, pin/SoC và trạm sạc VinFast.
 
-<video controls src="video_sample_02-1.mp4" title="Title"></video>
+
+
+https://github.com/user-attachments/assets/97ccf0a1-629a-4036-a09e-f7f9c21a8f4c
+
+
 
 ## Tính năng
 
