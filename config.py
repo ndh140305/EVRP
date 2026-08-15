@@ -12,8 +12,8 @@ VEHICLE_SPEC = {
 
 DEPOT = {
     "id": "D0",
-    "lat": 21.0267,
-    "lon": 105.7986,
+    "lat": 21.0360, 
+    "lon": 105.7960,
     "name": "302 Cau Giay - Discovery Complex",
     "tw_open": 480,
     "tw_close": 1020
@@ -28,8 +28,8 @@ VINFAST_STATIONS = {
     },
     "S2": {
         "name": "Tram sac VinFast - Tran Duy Hung",
-        "lat": 21.0264,
-        "lon": 105.7971,
+        "lat": 21.0082,
+        "lon": 105.7942,
         "charging_rate_kw": 22.0
     },
     "S3": {

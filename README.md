@@ -1,8 +1,8 @@
 # EVRP — Electric Vehicle Routing Problem with Time Windows
 
-Hệ thống tối ưu lộ trình xe tải điện giao hàng trên tại khu vực **Cầu Giấy, Hà Nội**. Solver dùng **Google OR-Tools**, có ràng buộc tải trọng, khung giờ giao nhận, pin/SoC và trạm sạc VinFast.
+Hệ thống tối ưu lộ trình xe tải điện giao hàng trên tại khu vực Cầu Giấy, Hà Nội. Solver dùng Google OR-Tools, có ràng buộc tải trọng, khung giờ giao nhận, pin/SoC và trạm sạc VinFast.
 
-<video controls src="video_sample_02.mp4" title="Title"></video>
+<video controls src="video_sample_02-1.mp4" title="Title"></video>
 
 ## Tính năng
 
