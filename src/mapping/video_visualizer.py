@@ -466,3 +466,528 @@ def interpolate_state(events, target_time):
         "phase": left["phase"],
     }
 
+def draw_frame(
+    ax_map,
+    ax_bat,
+    solution,
+    ts_data,
+    current_time,
+    min_t,
+    max_t,
+    all_nodes,
+):
+    ax_map.clear()
+    ax_bat.clear()
+
+    ax_map.set_facecolor("#F8F9FA")
+    ax_map.set_xticks([])
+    ax_map.set_yticks([])
+
+    hours = int(current_time)
+    minutes = int((current_time - hours) * 60)
+    seconds = int(
+        (
+            (current_time - hours) * 60 - minutes
+        ) * 60
+    )
+
+    time_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+    ax_map.set_title(
+        f"Simulation Time: {time_str}",
+        fontsize=14,
+        fontweight="bold",
+        pad=10,
+    )
+
+    lats = [
+        n["lat"]
+        for n in all_nodes.values()
+    ]
+
+    lons = [
+        n["lon"]
+        for n in all_nodes.values()
+    ]
+
+    if lats and lons:
+        ax_map.set_xlim(
+            min(lons) - 0.005,
+            max(lons) + 0.005,
+        )
+
+        ax_map.set_ylim(
+            min(lats) - 0.005,
+            max(lats) + 0.005,
+        )
+
+        avg_lat = sum(lats) / len(lats)
+        aspect_ratio = 1.0 / math.cos(
+            math.radians(avg_lat)
+        )
+
+        ax_map.set_aspect(
+            aspect_ratio,
+            adjustable="box",
+        )
+
+    for nid, node in all_nodes.items():
+        if node["type"] == "DEPOT":
+            ax_map.scatter(
+                node["lon"],
+                node["lat"],
+                marker="s",
+                color="black",
+                s=120,
+                zorder=5,
+            )
+
+        elif node["type"] == "CHARGING_STATION":
+            ax_map.scatter(
+                node["lon"],
+                node["lat"],
+                marker="P",
+                color="#2ECC71",
+                s=140,
+                zorder=4,
+            )
+
+        else:
+            ax_map.scatter(
+                node["lon"],
+                node["lat"],
+                marker="o",
+                color="#BDC3C7",
+                s=30,
+                zorder=3,
+            )
+
+    for vi, route in enumerate(solution.get("routes", [])):
+        vid = route["vehicle_id"]
+
+        color = VEHICLE_COLORS[
+            vi % len(VEHICLE_COLORS)
+        ]
+
+        events = ts_data.get(vid, [])
+
+        state = interpolate_state(
+            events,
+            current_time,
+        )
+
+        if state is None:
+            continue
+
+        lon = state["lon"]
+        lat = state["lat"]
+        battery = state["battery"]
+
+        history = [
+            ev
+            for ev in events
+            if ev["time"] <= current_time
+        ]
+
+        if history:
+            hx = [
+                ev["lon"]
+                for ev in history
+            ]
+
+            hy = [
+                ev["lat"]
+                for ev in history
+            ]
+
+            hx.append(lon)
+            hy.append(lat)
+
+            ax_map.plot(
+                hx,
+                hy,
+                color=color,
+                linewidth=2,
+                alpha=0.6,
+                zorder=2,
+            )
+
+        ax_map.scatter(
+            lon,
+            lat,
+            marker="o",
+            color=color,
+            s=180,
+            edgecolors="white",
+            linewidth=1.5,
+            zorder=10,
+        )
+
+        ax_map.text(
+            lon,
+            lat + 0.0008,
+            f"{vid}: {battery:.1f} kWh",
+            fontsize=8,
+            fontweight="bold",
+            ha="center",
+            va="bottom",
+            zorder=11,
+            bbox=dict(
+                facecolor="white",
+                alpha=0.85,
+                edgecolor=color,
+                boxstyle="round,pad=0.2",
+            ),
+        )
+
+    ax_bat.set_title(
+        "Real-time Vehicle Battery",
+        fontsize=12,
+        fontweight="bold",
+    )
+
+    ax_bat.set_xlim(
+        min_t - 0.1,
+        max_t + 0.1,
+    )
+
+    battery_capacity = config.VEHICLE_SPEC[
+        "battery_kwh"
+    ]
+
+    ax_bat.set_ylim(
+        0,
+        battery_capacity + 2,
+    )
+
+    ax_bat.set_xlabel("Time (Hours)")
+    ax_bat.set_ylabel("Battery (kWh)")
+    ax_bat.grid(
+        True,
+        linestyle="--",
+        alpha=0.5,
+    )
+
+    min_battery = (
+        battery_capacity
+        * config.VEHICLE_SPEC[
+            "min_battery_safety_percent"
+        ]
+    )
+
+    ax_bat.axhline(
+        min_battery,
+        color="red",
+        linestyle="--",
+        linewidth=1,
+        alpha=0.7,
+        label="Minimum SoC",
+    )
+
+    for vi, route in enumerate(
+        solution.get("routes", [])
+    ):
+        vid = route["vehicle_id"]
+
+        color = VEHICLE_COLORS[
+            vi % len(VEHICLE_COLORS)
+        ]
+
+        events = ts_data.get(vid, [])
+
+        state = interpolate_state(
+            events,
+            current_time,
+        )
+
+        history = [
+            ev
+            for ev in events
+            if ev["time"] <= current_time
+        ]
+
+        if not history or state is None:
+            continue
+
+        hx = [
+            ev["time"]
+            for ev in history
+        ]
+
+        hy = [
+            ev["battery"]
+            for ev in history
+        ]
+
+        if (
+            not hx
+            or hx[-1] < current_time - 1e-9
+        ):
+            hx.append(current_time)
+            hy.append(state["battery"])
+
+        ax_bat.plot(
+            hx,
+            hy,
+            color=color,
+            linewidth=2,
+            label=vid,
+        )
+
+        ax_bat.scatter(
+            current_time,
+            state["battery"],
+            color=color,
+            s=40,
+            zorder=5,
+        )
+
+    handles, labels = ax_bat.get_legend_handles_labels()
+
+    if labels:
+        ax_bat.legend(
+            handles,
+            labels,
+            loc="lower left",
+            fontsize=8,
+        )
+
+
+def create_video(
+    instance_name,
+    fps=15,
+    speed_multiplier=300.0,
+):
+    sol_path = os.path.join(
+        ROOT_DIR,
+        "data",
+        "output",
+        f"solution_{instance_name}.json",
+    )
+
+    with open(sol_path, "r", encoding="utf-8") as f:
+        solution = json.load(f)
+
+    inst_path = os.path.join(
+        ROOT_DIR,
+        "data",
+        "instances",
+        f"{instance_name}.json",
+    )
+
+    with open(inst_path, "r", encoding="utf-8") as f:
+        instance = json.load(f)
+
+    G = load_graph()
+
+    all_nodes = build_node_coordinates(instance)
+
+    ts_data = build_time_series(
+        solution,
+        G,
+        all_nodes,
+    )
+
+    min_t = float("inf")
+    max_t = float("-inf")
+
+    for events in ts_data.values():
+        if not events:
+            continue
+
+        min_t = min(
+            min_t,
+            events[0]["time"],
+        )
+
+        max_t = max(
+            max_t,
+            events[-1]["time"],
+        )
+
+    if (
+        min_t == float("inf")
+        or max_t <= min_t
+    ):
+        print("Không có dữ liệu thời gian hợp lệ.")
+        return
+
+    frames_dir = os.path.join(
+        ROOT_DIR,
+        "data",
+        "output",
+        "temp_frames",
+    )
+
+    if os.path.exists(frames_dir):
+        shutil.rmtree(frames_dir)
+
+    os.makedirs(
+        frames_dir,
+        exist_ok=True,
+    )
+
+    fig = plt.figure(
+        figsize=(15, 8)
+    )
+
+    gs = gridspec.GridSpec(
+        1,
+        2,
+        width_ratios=[1, 1.8],
+    )
+
+    ax_bat = fig.add_subplot(
+        gs[0, 0]
+    )
+
+    ax_map = fig.add_subplot(
+        gs[0, 1]
+    )
+
+    time_step_h = (
+        speed_multiplier
+        / 3600.0
+        / fps
+    )
+
+    if time_step_h <= 0:
+        raise ValueError(
+            "speed_multiplier phải > 0"
+        )
+
+    current_time = min_t
+    frame_idx = 0
+
+    print("Rendering frames...")
+
+    while current_time <= max_t + 1e-9:
+        draw_frame(
+            ax_map,
+            ax_bat,
+            solution,
+            ts_data,
+            current_time,
+            min_t,
+            max_t,
+            all_nodes,
+        )
+
+        plt.tight_layout()
+
+        frame_path = os.path.join(
+            frames_dir,
+            f"frame_{frame_idx:06d}.png",
+        )
+
+        plt.savefig(
+            frame_path,
+            dpi=100,
+        )
+
+        current_time += time_step_h
+        frame_idx += 1
+
+        if frame_idx % 20 == 0:
+            print(
+                f"   Rendered {frame_idx} frames "
+                f"({current_time:.2f}h / {max_t:.2f}h)"
+            )
+
+    plt.close(fig)
+
+    print(
+        f"\nStitching {frame_idx} frames into MP4 with OpenCV..."
+    )
+
+    video_path = os.path.join(
+        ROOT_DIR,
+        "data",
+        "output",
+        f"video_{instance_name}.mp4",
+    )
+
+    first_frame_path = os.path.join(
+        frames_dir,
+        "frame_000000.png",
+    )
+
+    frame0 = cv2.imread(
+        first_frame_path
+    )
+
+    if frame0 is None:
+        shutil.rmtree(frames_dir)
+        raise RuntimeError(
+            "Không đọc được frame đầu tiên."
+        )
+
+    height, width = frame0.shape[:2]
+
+    fourcc = cv2.VideoWriter_fourcc(
+        *"mp4v"
+    )
+
+    video = cv2.VideoWriter(
+        video_path,
+        fourcc,
+        fps,
+        (width, height),
+    )
+
+    if not video.isOpened():
+        shutil.rmtree(frames_dir)
+        raise RuntimeError(
+            "Không thể tạo file video."
+        )
+
+    for i in range(frame_idx):
+        img_path = os.path.join(
+            frames_dir,
+            f"frame_{i:06d}.png",
+        )
+
+        frame = cv2.imread(img_path)
+
+        if frame is not None:
+            video.write(frame)
+
+    video.release()
+    cv2.destroyAllWindows()
+
+    shutil.rmtree(frames_dir)
+
+    print(
+        f"\n[OK] Video saved to: {video_path}"
+    )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Create MP4 animation for EVRP solution"
+    )
+
+    parser.add_argument(
+        "--instance",
+        default="sample_01",
+    )
+
+    parser.add_argument(
+        "--fps",
+        type=int,
+        default=15,
+    )
+
+    parser.add_argument(
+        "--speed",
+        type=float,
+        default=300.0,
+    )
+
+    args = parser.parse_args()
+
+    create_video(
+        args.instance,
+        args.fps,
+        args.speed,
+    )
